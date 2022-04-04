@@ -5,6 +5,10 @@ import Amplify from "aws-amplify";
 import { useCallback, useRef, useState } from "react";
 import Webcam from "react-webcam";
 import awsconfig from "./aws-exports";
+import { Buffer } from "buffer";
+
+// @ts-ignore
+window.Buffer = Buffer;
 
 Amplify.configure(awsconfig);
 Amplify.addPluggable(new AmazonAIPredictionsProvider());
@@ -27,12 +31,16 @@ const Camera = () => {
       Predictions.identify({
         text: {
           source: {
-            bytes: imageSrc,
+            bytes: Buffer.from(
+              imageSrc.replace("data:image/jpeg;base64,", ""),
+              "base64"
+            ),
           },
           format: "ALL",
         },
       })
         .then((response) => {
+          console.log("response:", response);
           const {
             text: {
               // same as PLAIN + FORM + TABLE
@@ -41,7 +49,7 @@ const Camera = () => {
           } = response;
           setResponse(fullText);
         })
-        .catch((err) => console.log({ err }));
+        .catch((err) => console.error("error:", { err }));
     }
   }, [webcamRef]);
 
@@ -95,9 +103,7 @@ const Camera = () => {
 const IndexPage = () => {
   return (
     <>
-      <Head>
-        <title>Amplify Textract Demo</title>
-      </Head>
+      <title>Amplify Textract Demo</title>
       <Camera />
     </>
   );
